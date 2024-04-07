@@ -22,6 +22,24 @@ float t=0;//Temperatura
 float mQ135Ro; // Resistencia de calibracion para el MQ135
 float lec_nh4 = 0;
 
+//Variables usadas en el sistema de audio
+const int sampleWindow = 250; // Sample window width in mS (50 mS = 20Hz) 
+unsigned int sample; 
+double dBAverage=0;
+float en=0; 
+int count= 0,r=0;
+int avance=0;
+
+//Variables para almacenar los resultados
+float number1 = 0;//PM2.5
+float number2 = 0;//Intensidad del sonido
+float number3 = 0;//Temperatura
+float number4 = 0;//Humedad
+float number5 = 0;//Gas Amonio
+
+//Funcion usada para medir la intensidad del sonido
+float intensidad_sonido(void);
+
 
 void setup() {
    Serial.begin(115200);
@@ -49,31 +67,58 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
- h=dht.readHumidity();
- t=dht.readTemperature();
- lec_nh4 = MQ135_nh4.MQGetGasPercentage(mQ135Ro); // Lectura Amoniaco
+ number2=intensidad_sonido();
+ number3=dht.readTemperature();
+ number4=dht.readHumidity();
+ number5 = MQ135_nh4.MQGetGasPercentage(mQ135Ro); // Lectura Amoniaco
  Consola="";
- Consola+=h;
+ Consola+=number2;
  Consola+=" ";
- Consola+=t;  
+ Consola+=number3;  
  Consola+=" ";
- Consola+=lec_nh4;  
+ Consola+=number4;
+ Consola+=" ";
+ Consola+=number5;  
  Serial.println(Consola);
  display.clear();
  display.drawStringMaxWidth(0, 0,128, Consola);
  display.display();
    
- /*
- static uint16_t start_at = 0;
-  display.clear();
-  uint16_t firstline = display.drawStringMaxWidth(0, 0, 128, Consola.substring(start_at));
-  display.display();
-  if (firstline != 0) {
-    start_at += firstline;
-  } else {
-    start_at = 0;
-    delay(10); // additional pause before going back to start
-  }*/
+
   delay(1000);
 
+}
+
+float intensidad_sonido(void)
+{
+  unsigned int peakToPeak = 0; // peak-to-peak level 
+  unsigned int signalMax = 0; 
+  unsigned int signalMin = 1024; 
+  unsigned int sample; 
+  unsigned long startMillis= millis();
+  for(count=0,dBAverage=0;count<10;count++)
+  {
+    while (millis() - startMillis < sampleWindow)
+    { 
+      sample = analogRead(34);
+      //Serial.println(sample); 
+      if (sample < 1024) 
+      { // toss out spurious readings 
+        if (sample > signalMax)
+        { 
+          signalMax = sample; // save just the max levels 
+        } 
+        else if (sample < signalMin) { 
+          signalMin = sample; // save just the min levels 
+        } 
+      } 
+    }
+    peakToPeak = signalMax - signalMin; // max - min = peakpeak amplitude 
+    double volts = (peakToPeak * 10.0) / 1024; // convert to volts 
+    double dBW; 
+    dBW = 20*log10(volts*20)+40; 
+    dBAverage+=dBW;
+  }
+  en=dBAverage/count;
+  return en; 
 }
