@@ -4,10 +4,18 @@
 //Documentacion https://github.com/ThingPulse/esp8266-oled-ssd1306
 #include "DHT.h"//Libreria estandar de DHT
 #include "MQ135Sensor.h" //Libreria desarrollada a medida
+#include <Tomoto_HM330X.h>//Libreria del Sensor PM2.5 Azul
+//Documentacion https://github.com/tomoto/Arduino_Tomoto_HM330X
 #define MQ135PIN 36  // Sensor MQ135
 #define NH4 (0) // Tipo de gas a medir - Amonio
 #define AudioOut 34//Pin de salida del Audio
 #define AudioGain 33//Pin de configuración de la ganancia
+#define TypePM_A 0//El sensor PM2.5 azul
+#define TypePM_B 1//El sensor PM2.5 negro
+
+
+
+
 
 #define DTHPIN 18
 #define DTHTYPE DHT11
@@ -16,6 +24,8 @@
 DHT dht(DTHPIN, DTHTYPE);
 SSD1306Wire display(0x3c, SDA, SCL);
 mq135sensor MQ135_nh4(MQ135PIN,NH4); // Objeto del sensor MQ135
+Tomoto_HM330X sensorPMA; //Objeto del sensor PM2.5 A
+int TypePM = TypePM_A; //Define el tipo de sensor que se usara  
 
 const String Bienvenida="Sistema de medición de calidad del Aire";
 String Consola="";
@@ -39,8 +49,10 @@ float number3 = 0;//Temperatura
 float number4 = 0;//Humedad
 float number5 = 0;//Gas Amonio
 
-//Funcion usada para medir la intensidad del sonido
+//Función usada para medir la intensidad del sonido
 float intensidad_sonido(void);
+//Función usada para medir la contaminación PM2.5
+float leer_PM25(void);
 
 
 void setup() {
@@ -67,15 +79,24 @@ void setup() {
   Serial.print(mQ135Ro);
   Serial.println("kohm");
   delay(2000);
+  if (!sensorPMA.begin()) {
+    Serial.println("Falla en inicializacion HM330X");
+    TypePM =-1; //Define el tipo de sensor que se usara  
+     }else{
+           Serial.println("HM330X inicializado");
+     }
 }
 
 // the loop function runs over and over again forever
 void loop() {
+ number1 =leer_PM25();
  number2=intensidad_sonido();
  number3=dht.readTemperature();
  number4=dht.readHumidity();
  number5 = MQ135_nh4.MQGetGasPercentage(mQ135Ro); // Lectura Amoniaco
  Consola="";
+ Consola+=number1;
+ Consola+=" ";
  Consola+=number2;
  Consola+=" ";
  Consola+=number3;  
@@ -125,4 +146,30 @@ float intensidad_sonido(void)
   }
   en=dBAverage/count;
   return en; 
+}
+
+
+float leer_PM25(void)
+{
+float pm;
+switch(TypePM)
+{
+ case TypePM_A:
+               if (!sensorPMA.readSensor())
+                   {
+                    Serial.println("Falla en sensor PMA");
+                   } else {
+                           pm= sensorPMA.std.getPM2_5();//Función de lectura PM2.5
+                          }
+ break;
+ case TypePM_B:
+ break;
+ default:
+      Serial.println("Sensor PM 2.5 no especificado");
+      pm=avance++;
+      if(avance>1000)avance=0;
+  break;
+  
+};
+return pm;
 }
