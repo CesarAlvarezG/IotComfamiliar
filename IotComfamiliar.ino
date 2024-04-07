@@ -6,6 +6,8 @@
 #include "MQ135Sensor.h" //Libreria desarrollada a medida
 #define MQ135PIN 36  // Sensor MQ135
 #define NH4 (0) // Tipo de gas a medir - Amonio
+#define AudioOut 34//Pin de salida del Audio
+#define AudioGain 33//Pin de configuración de la ganancia
 
 #define DTHPIN 18
 #define DTHTYPE DHT11
@@ -47,6 +49,8 @@ void setup() {
    Serial.println("Comfamiliar Pereira");
    Serial.println("César Augusto Álvarez Gaspar");
    dht.begin();
+   pinMode(AudioGain,OUTPUT);
+   digitalWrite(AudioGain,HIGH); 
    display.init();
    display.setContrast(255);
    display.setTextAlignment(TEXT_ALIGN_LEFT);
@@ -100,7 +104,7 @@ float intensidad_sonido(void)
   {
     while (millis() - startMillis < sampleWindow)
     { 
-      sample = analogRead(34);
+      sample = analogRead(AudioOut);
       //Serial.println(sample); 
       if (sample < 1024) 
       { // toss out spurious readings 
