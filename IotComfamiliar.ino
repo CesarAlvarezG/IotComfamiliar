@@ -1,8 +1,9 @@
 
-#include <Wire.h>
-#include "SSD1306Wire.h"
-#include "DHT.h"
-#include "MQ135Sensor.h"
+#include <Wire.h>//Libreria de uso del protocolo I2C
+#include "SSD1306Wire.h"//Libreria para el uso de la pantalla oled 
+//Documentacion https://github.com/ThingPulse/esp8266-oled-ssd1306
+#include "DHT.h"//Libreria estandar de DHT
+#include "MQ135Sensor.h" //Libreria desarrollada a medida
 #define MQ135PIN 36  // Sensor MQ135
 #define NH4 (0) // Tipo de gas a medir - Amonio
 
@@ -59,7 +60,7 @@ void loop() {
  Consola+=lec_nh4;  
  Serial.println(Consola);
  display.clear();
- display.drawStringMaxWidth(0, 10,128, Consola);
+ display.drawStringMaxWidth(0, 0,128, Consola);
  display.display();
    
  /*
