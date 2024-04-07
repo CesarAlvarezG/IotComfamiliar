@@ -3,11 +3,12 @@
 #include "SSD1306Wire.h"
 #include "DHT.h"
 #include "MQ135Sensor.h"
-#define MQ135PIN 39  // Sensor MQ135
+#define MQ135PIN 36  // Sensor MQ135
 #define NH4 (0) // Tipo de gas a medir - Amonio
 
 #define DTHPIN 18
 #define DTHTYPE DHT11
+
 
 DHT dht(DTHPIN, DTHTYPE);
 SSD1306Wire display(0x3c, SDA, SCL);
@@ -30,11 +31,12 @@ void setup() {
    display.init();
    display.setContrast(255);
    display.setTextAlignment(TEXT_ALIGN_LEFT);
-   display.setFont(ArialMT_Plain_24);
+   display.setFont(ArialMT_Plain_16);
    display.display();
    display.drawStringMaxWidth(0, 0,128, Bienvenida);
    display.display();
    //  MQ135 inicializacion
+
   Serial.println("Calibrando... \n");
   mQ135Ro = MQ135_nh4.MQCalibracion();
   Serial.print("Calibracion completa \n \n");
@@ -56,7 +58,11 @@ void loop() {
  Consola+=" ";
  Consola+=lec_nh4;  
  Serial.println(Consola);
- 
+ display.clear();
+ display.drawStringMaxWidth(0, 10,128, Consola);
+ display.display();
+   
+ /*
  static uint16_t start_at = 0;
   display.clear();
   uint16_t firstline = display.drawStringMaxWidth(0, 0, 128, Consola.substring(start_at));
@@ -65,8 +71,8 @@ void loop() {
     start_at += firstline;
   } else {
     start_at = 0;
-    delay(1000); // additional pause before going back to start
-  }
+    delay(10); // additional pause before going back to start
+  }*/
   delay(1000);
 
 }
