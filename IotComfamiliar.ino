@@ -15,8 +15,12 @@
 #define AudioGain 33//Pin de configuración de la ganancia
 #define TypePM_A 0//El sensor PM2.5 azul
 #define TypePM_B 1//El sensor PM2.5 negro
-
-
+//Pines para lectura del sensor PMB
+//Documentacion https://wiki.dfrobot.com/PM2.5_laser_dust_sensor_SKU_SEN0177
+#define pinTxPMB 16
+#define pinRxPMB 17
+//Serial para el manejo del PM25B
+#include<HardwareSerial.h>
 
 
 
@@ -53,6 +57,12 @@ WiFiClient  client;
 
 unsigned long myChannelNumber = SECRET_CH_ID;
 const char * myWriteAPIKey = SECRET_WRITE_APIKEY;
+
+#define LENG 31   //0x42 + 31 bytes equal to 32 bytes
+unsigned char buf[LENG];
+
+//Objeto para el uso del PM25
+HardwareSerial MySerial(1);//UART1
 
 
 //Variables para almacenar los resultados
@@ -96,10 +106,13 @@ void setup() {
   delay(2000);
   if (!sensorPMA.begin()) {
     Serial.println("Falla en inicializacion HM330X");
-    TypePM =-1; //Define el tipo de sensor que se usara  
+    MySerial.begin(9600,SERIAL_8N1,pinRxPMB,pinTxPMB); 
+    MySerial.setTimeout(1500);
+    TypePM =TypePM_B; //Define el tipo de sensor que se usara  
      }else{
            Serial.println("HM330X inicializado");
      }
+ 
 }
 
 // the loop function runs over and over again forever
@@ -205,6 +218,17 @@ switch(TypePM)
                           }
  break;
  case TypePM_B:
+        if(MySerial.find(0x42)){    //start to read when detect 0x42
+        delay(100);
+        MySerial.readBytes(buf,LENG);
+      if(buf[0] == 0x4d)
+      {
+        if(checkValue(buf,LENG))
+          {
+            pm=transmitPM2_5(buf);//count PM2.5 value of the air detector module
+          }
+    }
+  }
  break;
  default:
       Serial.println("Sensor PM 2.5 no especificado");
@@ -214,4 +238,30 @@ switch(TypePM)
   
 };
 return pm;
+}
+
+char checkValue(unsigned char *thebuf, char leng)
+{
+  char receiveflag=0;
+  int receiveSum=0;
+
+  for(int i=0; i<(leng-2); i++){
+  receiveSum=receiveSum+thebuf[i];
+  }
+  receiveSum=receiveSum + 0x42;
+
+  if(receiveSum == ((thebuf[leng-2]<<8)+thebuf[leng-1]))  //check the serial data
+  {
+    receiveSum = 0;
+    receiveflag = 1;
+  }
+  return receiveflag;
+}
+
+//transmit PM Value to PC
+int transmitPM2_5(unsigned char *thebuf)
+{
+  int PM2_5Val;
+  PM2_5Val=((thebuf[5]<<8) + thebuf[6]);//count PM2.5 value of the air detector module
+  return PM2_5Val;
 }
