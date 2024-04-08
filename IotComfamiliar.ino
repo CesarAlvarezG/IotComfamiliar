@@ -6,6 +6,9 @@
 #include "MQ135Sensor.h" //Libreria desarrollada a medida
 #include <Tomoto_HM330X.h>//Libreria del Sensor PM2.5 Azul
 //Documentacion https://github.com/tomoto/Arduino_Tomoto_HM330X
+//Librerias estandar para uso de Thingspeak
+#include "secrets.h"
+#include "ThingSpeak.h" // always include thingspeak header file after other header files and custom macros
 #define MQ135PIN 36  // Sensor MQ135
 #define NH4 (0) // Tipo de gas a medir - Amonio
 #define AudioOut 34//Pin de salida del Audio
@@ -20,7 +23,7 @@
 #define DTHPIN 18
 #define DTHTYPE DHT11
 
-
+#include <WiFi.h>
 DHT dht(DTHPIN, DTHTYPE);
 SSD1306Wire display(0x3c, SDA, SCL);
 mq135sensor MQ135_nh4(MQ135PIN,NH4); // Objeto del sensor MQ135
@@ -41,6 +44,16 @@ double dBAverage=0;
 float en=0; 
 int count= 0,r=0;
 int avance=0;
+
+//Variables y objetos para el uso de ThingSpeak
+char ssid[] = SECRET_SSID;   // your network SSID (name) 
+char pass[] = SECRET_PASS;   // your network password
+int keyIndex = 0;            // your network key Index number (needed only for WEP)
+WiFiClient  client;
+
+unsigned long myChannelNumber = SECRET_CH_ID;
+const char * myWriteAPIKey = SECRET_WRITE_APIKEY;
+
 
 //Variables para almacenar los resultados
 float number1 = 0;//PM2.5
@@ -70,6 +83,8 @@ void setup() {
    display.display();
    display.drawStringMaxWidth(0, 0,128, Bienvenida);
    display.display();
+   WiFi.mode(WIFI_STA);   
+  ThingSpeak.begin(client);  // Initialize ThingSpeak
    //  MQ135 inicializacion
 
   Serial.println("Calibrando... \n");
@@ -104,13 +119,40 @@ void loop() {
  Consola+=number4;
  Consola+=" ";
  Consola+=number5;  
- Serial.println(Consola);
  display.clear();
  display.drawStringMaxWidth(0, 0,128, Consola);
  display.display();
-   
-
-  delay(1000);
+ // Connect or reconnect to WiFi
+  if(WiFi.status() != WL_CONNECTED){
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(SECRET_SSID);
+    while(WiFi.status() != WL_CONNECTED){
+      WiFi.begin(ssid, pass);  // Connect to WPA/WPA2 network. Change this line if using open or WEP network
+      Serial.print(".");
+      delay(5000);     
+    } 
+  }
+    Serial.println("\nConnected.");
+  ThingSpeak.setField(1, number1);
+  ThingSpeak.setField(2, number2);
+  ThingSpeak.setField(3, number3);
+  ThingSpeak.setField(4, number4);
+  ThingSpeak.setField(5, number5);
+  int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+  if(x == 200){
+    Serial.println("Channel update successful.");
+    Consola+=" ";
+    Consola+="Canal Actualizado";
+  }
+  else{
+    Serial.println("Problem updating channel. HTTP error code " + String(x));
+    Consola+=" ";
+    Consola+="Error en Canal, Cod: ";
+    Consola+=x;
+  }
+  Serial.println(Consola);
+ 
+  delay(30000);
 
 }
 
