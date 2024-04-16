@@ -1,4 +1,3 @@
-
 #include <Wire.h>//Libreria de uso del protocolo I2C
 #include "SSD1306Wire.h"//Libreria para el uso de la pantalla oled 
 //Documentacion https://github.com/ThingPulse/esp8266-oled-ssd1306
@@ -41,12 +40,7 @@ float t=0;//Temperatura
 float mQ135Ro; // Resistencia de calibracion para el MQ135
 float lec_nh4 = 0;
 
-//Variables usadas en el sistema de audio
-const int sampleWindow = 250; // Sample window width in mS (50 mS = 20Hz) 
-unsigned int sample; 
-double dBAverage=0;
-float en=0; 
-int count= 0,r=0;
+
 int avance=0;
 
 //Variables y objetos para el uso de ThingSpeak
@@ -118,10 +112,10 @@ void setup() {
 // the loop function runs over and over again forever
 void loop() {
  number1 =leer_PM25();
- number2=intensidad_sonido();
  number3=dht.readTemperature();
  number4=dht.readHumidity();
  number5 = MQ135_nh4.MQGetGasPercentage(mQ135Ro); // Lectura Amoniaco
+ number2=intensidad_sonido();
  Consola="";
  Consola+=number1;
  Consola+=" ";
@@ -176,12 +170,17 @@ float intensidad_sonido(void)
   unsigned int signalMin = 1024; 
   unsigned int sample; 
   unsigned long startMillis= millis();
+  //Variables usadas en el sistema de audio
+  const int sampleWindow = 250; // Sample window width in mS (50 mS = 20Hz) 
+  double dBAverage=0;
+  float en=0; 
+  int count= 0,r=0;
   for(count=0,dBAverage=0;count<10;count++)
   {
     while (millis() - startMillis < sampleWindow)
     { 
       sample = analogRead(AudioOut);
-      //Serial.println(sample); 
+      //sample = analogRead(34);
       if (sample < 1024) 
       { // toss out spurious readings 
         if (sample > signalMax)
@@ -206,7 +205,7 @@ float intensidad_sonido(void)
 
 float leer_PM25(void)
 {
-float pm;
+float pm=0;
 switch(TypePM)
 {
  case TypePM_A:
@@ -226,6 +225,8 @@ switch(TypePM)
         if(checkValue(buf,LENG))
           {
             pm=transmitPM2_5(buf);//count PM2.5 value of the air detector module
+            //Conversión de ug/m3 a PM
+            pm=(pm)/((28.01)*(1000/24.5));//Se compara con el CO2
           }
     }
   }
