@@ -39,7 +39,11 @@ float h=0;//Humedad
 float t=0;//Temperatura
 float mQ135Ro; // Resistencia de calibracion para el MQ135
 float lec_nh4 = 0;
-
+const int sampleWindow = 250; // Sample window width in mS (50 mS = 20Hz) 
+unsigned int sample; 
+double dBAverage=0;
+float en=0; 
+int count= 0,r=0;
 
 int avance=0;
 
@@ -170,11 +174,6 @@ float intensidad_sonido(void)
   unsigned int signalMin = 1024; 
   unsigned int sample; 
   unsigned long startMillis= millis();
-  //Variables usadas en el sistema de audio
-  const int sampleWindow = 250; // Sample window width in mS (50 mS = 20Hz) 
-  double dBAverage=0;
-  float en=0; 
-  int count= 0,r=0;
   for(count=0,dBAverage=0;count<10;count++)
   {
     while (millis() - startMillis < sampleWindow)
