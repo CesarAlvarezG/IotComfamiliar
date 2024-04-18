@@ -82,6 +82,7 @@ void setup() {
    Serial.println("Comfamiliar Pereira");
    Serial.println("César Augusto Álvarez Gaspar");
    dht.begin();
+   analogReadResolution(10);//ajuste resolucion esp32
    pinMode(AudioGain,OUTPUT);
    digitalWrite(AudioGain,HIGH); 
    display.init();
@@ -101,7 +102,9 @@ void setup() {
   Serial.print("MQ135 Ro=");
   Serial.print(mQ135Ro);
   Serial.println("kohm");
+
   delay(2000);
+
   if (!sensorPMA.begin()) {
     Serial.println("Falla en inicializacion HM330X");
     MySerial.begin(9600,SERIAL_8N1,pinRxPMB,pinTxPMB); 
@@ -116,10 +119,10 @@ void setup() {
 // the loop function runs over and over again forever
 void loop() {
  number1 =leer_PM25();
+ number2=intensidad_sonido();
  number3=dht.readTemperature();
  number4=dht.readHumidity();
  number5 = MQ135_nh4.MQGetGasPercentage(mQ135Ro); // Lectura Amoniaco
- number2=intensidad_sonido();
  Consola="";
  Consola+=number1;
  Consola+=" ";
@@ -179,7 +182,6 @@ float intensidad_sonido(void)
     while (millis() - startMillis < sampleWindow)
     { 
       sample = analogRead(AudioOut);
-      //sample = analogRead(34);
       if (sample < 1024) 
       { // toss out spurious readings 
         if (sample > signalMax)
