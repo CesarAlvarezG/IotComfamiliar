@@ -227,7 +227,7 @@ switch(TypePM)
           {
             pm=transmitPM2_5(buf);//count PM2.5 value of the air detector module
             //Conversión de ug/m3 a PM
-            pm=(pm)/((28.01)*(1000/24.5));//Se compara con el CO2
+            pm=(pm)/((28.01)*(1000));//Se compara con el CO2
           }
     }
   }
